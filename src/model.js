@@ -4,39 +4,113 @@ import {
   createEvent,
   combine,
   sample,
-  createApi
+  createApi,
+  guard
 } from "effector";
-import { playGround, defaultBomb, monsters } from "./generate";
+import { playGround, monsters } from "./generate";
 
-const DIMENSION = { x: 15, y: 85 };
+const DIMENSION = { x: 85, y: 15 };
 
 const $emptyPG = createStore(playGround(DIMENSION.x, DIMENSION.y));
 const $player = createStore({ x: 1, y: 1 });
-export const $monsters = createStore(monsters(8, DIMENSION.x, DIMENSION.y));
-export const $bomb = createStore(defaultBomb);
+const $bangStack = createStore([]);
+export const $monsters = createStore(monsters(3, DIMENSION.x, DIMENSION.y));
+//export const $monsters = createStore([{active: true, x: 7, y: 7}]);
+export const $bombStack = createStore([]);
 
-//$monsters.watch((s) => console.log(s));
+// $monsters.watch((s) => console.log(s));
+// $player.watch(s=>console.log(s));
+// $emptyPG.watch((s) => console.log(s));
+// $bangStack.watch(s=>console.log(s));
+// $bombStack.watch((s) => console.log(s));
 
-// export const moveRight = createEvent();
-// $player.on(moveRight, (pos, _) => ({ ...pos, x: pos.x + 1 }));
 const bombPlanted = createEvent();
-
+const bombAddedToStack = createEvent();
+const bombExploded = createEvent();
+const bombTimerTick = createEvent();
+export const bombTimer = createEvent();
+export const bangTimer = createEvent();
+const showBang = createEvent();
+const bangTimerTick = createEvent();
+const bangDump = createEvent(); //конец показа взрыва
+const monsterKilled = createEvent();
+//
 export const playerAPI = createApi($player, {
-  moveLeft: (pos, n) => ({ ...pos, x: pos.x - n }),
-  moveRight: (pos, n) => ({ ...pos, x: pos.x + n }),
-  moveUp: (pos, n) => ({ ...pos, y: pos.y - n }),
-  moveDown: (pos, n) => ({ ...pos, y: pos.y + n }),
+  moveLeft: (pos, _) => (pos.x - 1 >= 1 ? { ...pos, x: pos.x - 1 } : pos),
+  moveRight: (pos, _) =>
+    pos.x + 1 <= DIMENSION.x - 2 ? { ...pos, x: pos.x + 1 } : pos,
+  moveUp: (pos, _) => (pos.y - 1 >= 1 ? { ...pos, y: pos.y - 1 } : pos),
+  moveDown: (pos, _) =>
+    pos.y + 1 <= DIMENSION.y - 2 ? { ...pos, y: pos.y + 1 } : pos,
   setBomb: () => bombPlanted()
 });
 
+/**** */
+$monsters.on(monsterKilled, (stack, victim) =>
+  stack.filter((monster) => !(monster.x === victim.x && monster.y === victim.y))
+);
+
+$bombStack
+  .on(bombTimerTick, (stack, _) =>
+    stack.map((bomb) => ({ ...bomb, timer: bomb.timer + 1 }))
+  )
+  .on(bombAddedToStack, (stack, newBomb) => [...stack, newBomb])
+  .on(bombExploded, (stack, _) => stack.filter((bomb) => bomb.timer < 6));
+
+$bangStack
+  .on(showBang, (stack, [bang]) => [
+    ...stack,
+    { timer: 0, x: bang.x, y: bang.y }
+  ])
+  .on(bangTimerTick, (stack, _) =>
+    stack.map((bang) => ({ ...bang, timer: bang.timer + 1 }))
+  )
+  .on(bangDump, (stack, _) => stack.filter((bang) => bang.timer < 4));
+
+//установка бомбы
 sample({
   source: $player,
   clock: bombPlanted,
   fn: (plPos) => ({ planted: true, x: plPos.x, y: plPos.y, timer: 0 }),
-  target: $bomb
+  target: bombAddedToStack
 });
 
-//$player.watch((s) => console.log(s));
+//запуск таймера бомбы
+guard({
+  source: sample($bombStack, bombTimer),
+  filter: (bombStack) => bombStack.length > 0,
+  target: bombTimerTick
+});
+
+//взрыв бомбы
+sample({
+  source: $bombStack,
+  clock: bombTimerTick,
+  fn: (bombStack) => bombStack.filter((bomb) => bomb.timer >= 6),
+  target: bombExploded
+});
+
+//активация взрыва
+guard({
+  source: bombExploded,
+  filter: (exp) => exp.length !== 0,
+  target: showBang
+});
+
+//запуск таймера показа взрыва
+guard({
+  source: sample($bangStack, bangTimer),
+  filter: (bangStack) => bangStack.length > 0,
+  target: bangTimerTick
+});
+
+//конец показа взрыва
+guard({
+  source: $bangStack,
+  filter: (bangStack) => bangStack.filter((bang) => bang.timer >= 4).length > 0,
+  target: bangDump
+});
+
 export const moveMonsterFx = createEffect((monsters) => {
   return monsters.map((monster) => {
     const randAxis = Math.round(Math.random()) === 1 ? "x" : "y";
@@ -60,37 +134,61 @@ export const game = combine(
   $emptyPG,
   $player,
   $monsters,
-  $bomb,
-  (pG, player, monsters, bomb) => {
-    for (let i = 1; i < pG.length - 1; i++) {
-      for (let j = 1; j < pG[i].length - 1; j++) {
-        pG[i][j] = " ";
-      }
-    }
+  $bombStack,
+  $bangStack,
+  (emptyPG, player, monsters, bombStack, bangStack) => {
+    let pG = emptyPG.map((line) => [...line]);
+
     pG[player.y][player.x] = "P";
     for (let i = 0; i < monsters.length; i++) {
-      pG[monsters[i]["x"]][monsters[i]["y"]] = "☻";
+      if (monsters[i].active) pG[monsters[i]["y"]][monsters[i]["x"]] = "M";
     }
-    if (bomb.planted) pG[bomb.y][bomb.x] = "☢";
+
+    bombStack.forEach((bomb) => {
+      pG[bomb.y][bomb.x] = "B";
+    });
+
+    bangStack.forEach((bang) => {
+      for (let i = 1; i < 4; i++) {
+        if (bang.x + i < DIMENSION.x - 1) {
+          if (pG[bang.y][bang.x + i] === " ") {
+            pG[bang.y][bang.x + i] = "F";
+          } else {
+            console.log("kill");
+            monsterKilled({ y: bang.y, x: bang.x + i });
+          }
+        }
+
+        if (bang.x - i > 0) {
+          if (pG[bang.y][bang.x - i] === " ") {
+            pG[bang.y][bang.x - i] = "F";
+          } else {
+            console.log("kill");
+            monsterKilled({ y: bang.y, x: bang.x - i });
+          }
+        }
+
+        if (bang.y + i < DIMENSION.y - 1) {
+          if (pG[bang.y + i][bang.x] === " ") {
+            pG[bang.y + i][bang.x] = "F";
+          } else {
+            console.log("kill");
+            monsterKilled({ y: bang.y + i, x: bang.x });
+          }
+        }
+
+        if (bang.y - i > 0) {
+          if (pG[bang.y - i][bang.x] === " ") {
+            pG[bang.y - i][bang.x] = "F";
+          } else {
+            console.log("kill");
+            monsterKilled({ y: bang.y - i, x: bang.x });
+          }
+        }
+      }
+    });
+
     return pG;
   }
 );
-
-// export const $pG = sample({
-//   source: $emptyPG,
-//   clock: $monsters,
-//   fn: (pG, monsters) => {
-//     //не нравится
-//     for (let i = 1; i < pG.length - 1; i++) {
-//       for (let j = 1; j < pG[i].length - 1; j++) {
-//         if (pG[i][j] === "☻") pG[i][j] = " ";
-//       }
-//     }
-//     for (let i = 0; i < monsters.length; i++) {
-//       pG[monsters[i]["x"]][monsters[i]["y"]] = "☻";
-//     }
-//     return pG;
-//   }
-// });
-
-//$pG.watch((s) => console.log(s));
+//game.watch((s) => console.log(s));
