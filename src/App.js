@@ -1,36 +1,22 @@
 import React, { useEffect } from "react";
 import "./styles.css";
 import { useStore } from "effector-react";
-import {
-  $monsters,
-  moveMonsterFx,
-  game,
-  playerAPI,
-  bombTimer,
-  bangTimer
-} from "./model";
+import { moveMonster, game, playerAPI, bombTimer, bangTimer } from "./model";
 
 export default function App() {
   const pG = useStore(game);
-  const monsters = useStore($monsters);
 
   useEffect(() => {
-    document.addEventListener("keypress", drive, false);
+    document.addEventListener("keypress", controls, false);
     const interval = setInterval(() => {
-      //moveMonsterFx(monsters);
+      moveMonster();
       bombTimer();
       bangTimer();
     }, 500);
     return () => clearInterval(interval);
   }, []);
 
-  const moveM = () => {
-    moveMonsterFx(monsters);
-  };
-
-  const moveP = () => {};
-
-  const drive = (event) => {
+  const controls = (event) => {
     switch (event.keyCode) {
       case 97:
         playerAPI.moveLeft();
@@ -53,12 +39,12 @@ export default function App() {
   };
 
   return (
-    <div className="App" onKeyPress={drive}>
+    <div className="App" onKeyPress={controls}>
       {pG.map((row) => (
         <pre>{row.join``}</pre>
       ))}
-      <button onClick={moveM}>move</button>
-      <button onClick={moveP}>moveP</button>
+      <div>You win</div>
+      <div>You DIED!</div>
     </div>
   );
 }

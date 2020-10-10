@@ -1,6 +1,5 @@
 import {
   createStore,
-  createEffect,
   createEvent,
   combine,
   sample,
@@ -14,8 +13,7 @@ const DIMENSION = { x: 85, y: 15 };
 const $emptyPG = createStore(playGround(DIMENSION.x, DIMENSION.y));
 const $player = createStore({ x: 1, y: 1 });
 const $bangStack = createStore([]);
-export const $monsters = createStore(monsters(3, DIMENSION.x, DIMENSION.y));
-//export const $monsters = createStore([{active: true, x: 7, y: 7}]);
+export const $monsters = createStore(monsters(8, DIMENSION.x, DIMENSION.y));
 export const $bombStack = createStore([]);
 
 // $monsters.watch((s) => console.log(s));
@@ -33,6 +31,7 @@ export const bangTimer = createEvent();
 const showBang = createEvent();
 const bangTimerTick = createEvent();
 const bangDump = createEvent(); //конец показа взрыва
+export const moveMonster = createEvent();
 const monsterKilled = createEvent();
 //
 export const playerAPI = createApi($player, {
@@ -46,9 +45,25 @@ export const playerAPI = createApi($player, {
 });
 
 /**** */
-$monsters.on(monsterKilled, (stack, victim) =>
-  stack.filter((monster) => !(monster.x === victim.x && monster.y === victim.y))
-);
+$monsters
+  .on(monsterKilled, (stack, victim) =>
+    stack.filter(
+      (monster) => !(monster.x === victim.x && monster.y === victim.y)
+    )
+  )
+  .on(moveMonster, (stack, _) =>
+    stack.map((monster) => {
+      const randAxis = Math.round(Math.random()) === 1 ? "x" : "y";
+      if (Math.round(Math.random()) === 1) {
+        return monster[randAxis] + 1 === DIMENSION[randAxis] - 1
+          ? monster
+          : { ...monster, [randAxis]: (monster[randAxis] += 1) };
+      }
+      return monster[randAxis] - 1 < 1
+        ? monster
+        : { ...monster, [randAxis]: (monster[randAxis] -= 1) };
+    })
+  );
 
 $bombStack
   .on(bombTimerTick, (stack, _) =>
@@ -111,25 +126,6 @@ guard({
   target: bangDump
 });
 
-export const moveMonsterFx = createEffect((monsters) => {
-  return monsters.map((monster) => {
-    const randAxis = Math.round(Math.random()) === 1 ? "x" : "y";
-
-    if (Math.round(Math.random()) === 1) {
-      return monster[randAxis] + 1 === DIMENSION[randAxis] - 1
-        ? monster
-        : { ...monster, [randAxis]: (monster[randAxis] += 1) };
-    }
-    return monster[randAxis] - 1 < 1
-      ? monster
-      : { ...monster, [randAxis]: (monster[randAxis] -= 1) };
-  });
-});
-
-$monsters.on(moveMonsterFx.doneData, (_, payload) => {
-  return payload;
-});
-
 export const game = combine(
   $emptyPG,
   $player,
@@ -141,7 +137,8 @@ export const game = combine(
 
     pG[player.y][player.x] = "P";
     for (let i = 0; i < monsters.length; i++) {
-      if (monsters[i].active) pG[monsters[i]["y"]][monsters[i]["x"]] = "M";
+      if (!monsters[i].active) console.log("hi");
+      if (monsters[i].active) pG[monsters[i]["y"]][monsters[i]["x"]] = "☻";
     }
 
     bombStack.forEach((bomb) => {
@@ -153,8 +150,7 @@ export const game = combine(
         if (bang.x + i < DIMENSION.x - 1) {
           if (pG[bang.y][bang.x + i] === " ") {
             pG[bang.y][bang.x + i] = "F";
-          } else {
-            console.log("kill");
+          } else if (pG[bang.y][bang.x + i] === "☻") {
             monsterKilled({ y: bang.y, x: bang.x + i });
           }
         }
@@ -162,8 +158,7 @@ export const game = combine(
         if (bang.x - i > 0) {
           if (pG[bang.y][bang.x - i] === " ") {
             pG[bang.y][bang.x - i] = "F";
-          } else {
-            console.log("kill");
+          } else if (pG[bang.y][bang.x - i] === "☻") {
             monsterKilled({ y: bang.y, x: bang.x - i });
           }
         }
@@ -171,8 +166,7 @@ export const game = combine(
         if (bang.y + i < DIMENSION.y - 1) {
           if (pG[bang.y + i][bang.x] === " ") {
             pG[bang.y + i][bang.x] = "F";
-          } else {
-            console.log("kill");
+          } else if (pG[bang.y + i][bang.x] === "☻") {
             monsterKilled({ y: bang.y + i, x: bang.x });
           }
         }
@@ -180,8 +174,7 @@ export const game = combine(
         if (bang.y - i > 0) {
           if (pG[bang.y - i][bang.x] === " ") {
             pG[bang.y - i][bang.x] = "F";
-          } else {
-            console.log("kill");
+          } else if (pG[bang.y - i][bang.x] === "☻") {
             monsterKilled({ y: bang.y - i, x: bang.x });
           }
         }
