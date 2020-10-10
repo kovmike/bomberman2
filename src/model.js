@@ -15,6 +15,8 @@ const $player = createStore({ x: 1, y: 1 });
 const $bangStack = createStore([]);
 export const $monsters = createStore(monsters(8, DIMENSION.x, DIMENSION.y));
 export const $bombStack = createStore([]);
+export const $winFlag = createStore(false);
+export const $loseFlag = createStore(false);
 
 // $monsters.watch((s) => console.log(s));
 // $player.watch(s=>console.log(s));
@@ -33,6 +35,9 @@ const bangTimerTick = createEvent();
 const bangDump = createEvent(); //конец показа взрыва
 export const moveMonster = createEvent();
 const monsterKilled = createEvent();
+const youWin = createEvent();
+const youLose = createEvent();
+
 //
 export const playerAPI = createApi($player, {
   moveLeft: (pos, _) => (pos.x - 1 >= 1 ? { ...pos, x: pos.x - 1 } : pos),
@@ -82,6 +87,9 @@ $bangStack
   )
   .on(bangDump, (stack, _) => stack.filter((bang) => bang.timer < 4));
 
+$winFlag.on(youWin, (flag, _) => true);
+$loseFlag.on(youLose, (flag, _) => true);
+
 //установка бомбы
 sample({
   source: $player,
@@ -126,6 +134,12 @@ guard({
   target: bangDump
 });
 
+//win
+guard({
+  source: $monsters,
+  filter: (monsters) => monsters.length === 0,
+  target: youWin
+});
 export const game = combine(
   $emptyPG,
   $player,

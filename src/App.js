@@ -1,10 +1,20 @@
 import React, { useEffect } from "react";
 import "./styles.css";
 import { useStore } from "effector-react";
-import { moveMonster, game, playerAPI, bombTimer, bangTimer } from "./model";
+import {
+  moveMonster,
+  game,
+  playerAPI,
+  bombTimer,
+  bangTimer,
+  $winFlag,
+  $loseFlag
+} from "./model";
 
 export default function App() {
   const pG = useStore(game);
+  const winFlag = useStore($winFlag);
+  const loseFlag = useStore($loseFlag);
 
   useEffect(() => {
     document.addEventListener("keypress", controls, false);
@@ -43,8 +53,8 @@ export default function App() {
       {pG.map((row) => (
         <pre>{row.join``}</pre>
       ))}
-      <div>You win</div>
-      <div>You DIED!</div>
+      {winFlag ? <div>You win</div> : null}
+      {loseFlag ? <div>You DIED!</div> : null}
     </div>
   );
 }
