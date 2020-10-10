@@ -13,10 +13,10 @@ const DIMENSION = { x: 85, y: 15 };
 const $emptyPG = createStore(playGround(DIMENSION.x, DIMENSION.y));
 const $player = createStore({ x: 1, y: 1 });
 const $bangStack = createStore([]);
-export const $monsters = createStore(monsters(8, DIMENSION.x, DIMENSION.y));
-export const $bombStack = createStore([]);
-export const $winFlag = createStore(false);
-export const $loseFlag = createStore(false);
+const $monsters = createStore(monsters(8, DIMENSION.x, DIMENSION.y));
+const $bombStack = createStore([]);
+const $winFlag = createStore(false);
+const $loseFlag = createStore(false);
 
 // $monsters.watch((s) => console.log(s));
 // $player.watch(s=>console.log(s));
@@ -28,18 +28,18 @@ const bombPlanted = createEvent();
 const bombAddedToStack = createEvent();
 const bombExploded = createEvent();
 const bombTimerTick = createEvent();
-export const bombTimer = createEvent();
-export const bangTimer = createEvent();
+const bombTimer = createEvent();
+const bangTimer = createEvent();
 const showBang = createEvent();
 const bangTimerTick = createEvent();
 const bangDump = createEvent(); //конец показа взрыва
-export const moveMonster = createEvent();
+const moveMonster = createEvent();
 const monsterKilled = createEvent();
 const youWin = createEvent();
 const youLose = createEvent();
 
 //
-export const playerAPI = createApi($player, {
+const playerAPI = createApi($player, {
   moveLeft: (pos, _) => (pos.x - 1 >= 1 ? { ...pos, x: pos.x - 1 } : pos),
   moveRight: (pos, _) =>
     pos.x + 1 <= DIMENSION.x - 2 ? { ...pos, x: pos.x + 1 } : pos,
@@ -140,7 +140,8 @@ guard({
   filter: (monsters) => monsters.length === 0,
   target: youWin
 });
-export const game = combine(
+
+const game = combine(
   $emptyPG,
   $player,
   $monsters,
@@ -188,3 +189,13 @@ export const game = combine(
   }
 );
 //game.watch((s) => console.log(s));
+
+export {
+  game,
+  $winFlag,
+  $loseFlag,
+  bombTimer,
+  bangTimer,
+  moveMonster,
+  playerAPI
+};
