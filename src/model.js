@@ -155,12 +155,12 @@ export const game = combine(
     }
 
     bombStack.forEach((bomb) => {
-      pG[bomb.y][bomb.x] = "⋆";
+      pG[bomb.y][bomb.x] = "*";
     });
 
     const checkForExpl = (x, y) => {
       if (pG[x][y] === " ") {
-        pG[x][y] = "*";
+        pG[x][y] = "+";
       } else if (pG[x][y] === "☻") {
         //хитрый ход
         monsterKilled({ x: y, y: x });
