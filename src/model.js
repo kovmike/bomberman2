@@ -149,7 +149,7 @@ export const game = combine(
   (emptyPG, player, monsters, bombStack, bangStack) => {
     let pG = emptyPG.map((line) => [...line]);
 
-    pG[player.y][player.x] = "ဗီူ";
+    pG[player.y][player.x] = "P";
     for (let i = 0; i < monsters.length; i++) {
       if (monsters[i].active) pG[monsters[i]["y"]][monsters[i]["x"]] = "☻";
     }
