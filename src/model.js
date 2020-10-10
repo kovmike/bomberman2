@@ -149,48 +149,37 @@ export const game = combine(
   (emptyPG, player, monsters, bombStack, bangStack) => {
     let pG = emptyPG.map((line) => [...line]);
 
-    pG[player.y][player.x] = "P";
+    pG[player.y][player.x] = "ဗီူ";
     for (let i = 0; i < monsters.length; i++) {
-      if (!monsters[i].active) console.log("hi");
       if (monsters[i].active) pG[monsters[i]["y"]][monsters[i]["x"]] = "☻";
     }
 
     bombStack.forEach((bomb) => {
-      pG[bomb.y][bomb.x] = "B";
+      pG[bomb.y][bomb.x] = "⋆";
     });
+
+    const checkForExpl = (x, y) => {
+      if (pG[x][y] === " ") {
+        pG[x][y] = "*";
+      } else if (pG[x][y] === "☻") {
+        //хитрый ход
+        monsterKilled({ x: y, y: x });
+      }
+    };
 
     bangStack.forEach((bang) => {
       for (let i = 1; i < 4; i++) {
         if (bang.x + i < DIMENSION.x - 1) {
-          if (pG[bang.y][bang.x + i] === " ") {
-            pG[bang.y][bang.x + i] = "F";
-          } else if (pG[bang.y][bang.x + i] === "☻") {
-            monsterKilled({ y: bang.y, x: bang.x + i });
-          }
+          checkForExpl(bang.y, bang.x + i);
         }
-
         if (bang.x - i > 0) {
-          if (pG[bang.y][bang.x - i] === " ") {
-            pG[bang.y][bang.x - i] = "F";
-          } else if (pG[bang.y][bang.x - i] === "☻") {
-            monsterKilled({ y: bang.y, x: bang.x - i });
-          }
+          checkForExpl(bang.y, bang.x - i);
         }
-
         if (bang.y + i < DIMENSION.y - 1) {
-          if (pG[bang.y + i][bang.x] === " ") {
-            pG[bang.y + i][bang.x] = "F";
-          } else if (pG[bang.y + i][bang.x] === "☻") {
-            monsterKilled({ y: bang.y + i, x: bang.x });
-          }
+          checkForExpl(bang.y + i, bang.x);
         }
-
         if (bang.y - i > 0) {
-          if (pG[bang.y - i][bang.x] === " ") {
-            pG[bang.y - i][bang.x] = "F";
-          } else if (pG[bang.y - i][bang.x] === "☻") {
-            monsterKilled({ y: bang.y - i, x: bang.x });
-          }
+          checkForExpl(bang.y - i, bang.x);
         }
       }
     });

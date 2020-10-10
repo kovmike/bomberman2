@@ -50,6 +50,7 @@ export default function App() {
 
   return (
     <div className="App" onKeyPress={controls}>
+      <div>controls - WASD, bomb = SPACE </div>
       {pG.map((row) => (
         <pre>{row.join``}</pre>
       ))}
