@@ -8,6 +8,13 @@ export const playGround = (n, m) => {
   });
 };
 
+export const barrierGenerator = (count, maxX, maxY) => {
+  return new Array(count).fill("").map((_) => ({
+    x: ~~(Math.random() * maxX) + 1,
+    y: ~~(Math.random() * maxY) + 1
+  }));
+};
+
 export const monsters = (count, x, y) => {
   return new Array(count).fill(" ").map((_) => ({
     x: ~~(Math.random() * (x - 2)) + 1,
