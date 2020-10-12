@@ -7,7 +7,7 @@ import {
   playerAPI,
   bombTimer,
   bangTimer,
-  move,
+  movePlayer,
   $winFlag,
   $loseFlag
 } from "./model";
@@ -30,16 +30,16 @@ export default function App() {
   const controls = (event) => {
     switch (event.keyCode) {
       case 97:
-        move({ x: -1, y: 0 });
+        movePlayer({ x: -1, y: 0 });
         break;
       case 119:
-        move({ y: -1, x: 0 });
+        movePlayer({ y: -1, x: 0 });
         break;
       case 115:
-        move({ y: 1, x: 0 });
+        movePlayer({ y: 1, x: 0 });
         break;
       case 100:
-        move({ x: 1, y: 0 });
+        movePlayer({ x: 1, y: 0 });
         break;
       case 32:
         playerAPI.setBomb();

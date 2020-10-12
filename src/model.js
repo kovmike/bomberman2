@@ -33,7 +33,7 @@ const $loseFlag = createStore(false);
 // $bombStack.watch((s) => console.log(s));
 // $boxStack.watch((s) => console.log(s));
 
-const move = createEvent();
+const movePlayer = createEvent();
 const positionChanged = createEvent();
 const bombPlanted = createEvent();
 const bombAddedToStack = createEvent();
@@ -138,10 +138,10 @@ sample({
 });
 
 //движение игрока
-//препятствия
+//взаимодействия с препятствиями
 sample({
   source: { $player, $boxStack, $wallStack },
-  clock: move,
+  clock: movePlayer,
   fn: ({ $player, $boxStack, $wallStack }, move) => {
     if (
       $boxStack.some(
@@ -156,7 +156,7 @@ sample({
   },
   target: positionChanged
 });
-
+//to api
 split({
   source: positionChanged,
   match: {
@@ -315,7 +315,7 @@ export {
   game,
   $winFlag,
   $loseFlag,
-  move,
+  movePlayer,
   bombTimer,
   bangTimer,
   moveMonster,
