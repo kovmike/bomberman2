@@ -7,7 +7,6 @@
   "dependencies": {
     "effector": "21.4.2",
     "effector-react": "21.0.6",
-    "forest": "0.19.3",
     "react": "16.13.1",
     "react-dom": "16.13.1",
     "react-scripts": "3.4.3"
