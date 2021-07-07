@@ -26,12 +26,6 @@ const $wallStack = createStore(
 const $winFlag = createStore(false);
 const $loseFlag = createStore(false);
 
-// $monsters.watch((s) => console.log(s));
-// $player.watch(s=>console.log(s));
-// $emptyPG.watch((s) => console.log(s));
-// $bangStack.watch(s=>console.log(s));
-// $bombStack.watch((s) => console.log(s));
-// $boxStack.watch((s) => console.log(s));
 
 const movePlayer = createEvent();
 const positionChanged = createEvent();
