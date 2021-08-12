@@ -23,7 +23,7 @@ export default function App() {
       moveMonster();
       bombTimer();
       bangTimer();
-    }, 500);
+    }, 400);
     return () => clearInterval(interval);
   }, []);
 
